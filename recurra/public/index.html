@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recurra — Subscription Tracker</title>
+<meta name="description" content="Recurra: track recurring subscriptions, upcoming payments and spending across categories and currencies.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔁</text></svg>">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="logo">🔁</span><div><strong>Recurra</strong><small>recurring spend, clarified</small></div></div>
+  <nav class="tabs" role="tablist">
+    <button data-tab="dashboard" class="active">Dashboard</button>
+    <button data-tab="subs">Subscriptions</button>
+    <button data-tab="calendar">Calendar</button>
+    <button data-tab="stats">Statistics</button>
+    <button data-tab="manage">Manage</button>
+  </nav>
+  <div class="top-actions">
+    <button id="remindBtn" class="icon-btn" title="Payment reminders">🔔<span id="remindCount" class="badge hidden">0</span></button>
+    <button id="themeBtn" class="icon-btn" title="Toggle theme">🌙</button>
+    <button id="addBtn" class="btn primary">+ New</button>
+  </div>
+</header>
+
+<div id="remindPanel" class="remind-panel hidden"></div>
+
+<main>
+  <!-- DASHBOARD -->
+  <section id="tab-dashboard" class="tab active">
+    <div id="overdueWrap"></div>
+    <div class="grid kpis" id="kpis"></div>
+    <div class="two-col">
+      <div class="card"><div class="card-h"><h2>Upcoming payments</h2><button class="link" data-goto="subs">View all →</button></div><div id="upcoming"></div></div>
+      <div class="card"><div class="card-h"><h2>Monthly budget</h2><span id="budgetLabel" class="muted"></span></div>
+        <div class="progress"><div id="budgetBar"></div></div>
+        <div id="budgetText" class="muted"></div>
+        <div class="card-h" style="margin-top:14px"><h2>Billing calendar peek</h2><button class="link" data-goto="calendar">Open →</button></div>
+        <div id="peekCal" class="peek"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUBSCRIPTIONS -->
+  <section id="tab-subs" class="tab">
+    <div class="toolbar">
+      <input id="search" type="search" placeholder="Search subscriptions…">
+      <select id="fCat"><option value="">All categories</option></select>
+      <select id="fMem"><option value="">All members</option></select>
+      <select id="fState"><option value="">Active + inactive</option><option value="active">Active only</option><option value="inactive">Inactive only</option></select>
+      <select id="sort"><option value="next_payment">Sort: next payment</option><option value="price">Sort: price</option><option value="name">Sort: name</option></select>
+      <div class="seg"><button id="viewList" class="on">☰</button><button id="viewGrid">▦</button></div>
+    </div>
+    <div id="subList" class="subs list"></div>
+    <div id="emptySubs" class="empty hidden">No subscriptions match. <button class="btn primary" id="emptyAdd">Add your first subscription</button></div>
+  </section>
+
+  <!-- CALENDAR -->
+  <section id="tab-calendar" class="tab">
+    <div class="cal-head">
+      <div><h2 id="calTitle">—</h2><div id="calStats" class="muted"></div></div>
+      <div><button class="btn" id="calPrev">←</button><button class="btn" id="calToday">Today</button><button class="btn" id="calNext">→</button></div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </section>
+
+  <!-- STATS -->
+  <section id="tab-stats" class="tab">
+    <div class="grid kpis" id="statKpis"></div>
+    <div class="two-col">
+      <div class="card"><h2>Spend by category</h2><div id="byCat"></div></div>
+      <div class="card"><h2>By household member</h2><div id="byMem"></div></div>
+    </div>
+    <div class="two-col">
+      <div class="card"><h2>By payment method</h2><div id="byPay"></div></div>
+      <div class="card"><h2>By billing cycle</h2><div id="byCycle"></div></div>
+    </div>
+    <div class="card"><h2>Projected cost — next 12 months <span class="muted">(occurrences in main currency)</span></h2><div id="proj" class="bars"></div></div>
+  </section>
+
+  <!-- MANAGE -->
+  <section id="tab-manage" class="tab">
+    <div class="two-col">
+      <div class="card"><div class="card-h"><h2>Categories</h2><button class="btn" id="addCat">+ Add</button></div><div id="catList" class="rows"></div></div>
+      <div class="card"><div class="card-h"><h2>Household members</h2><button class="btn" id="addMem">+ Add</button></div><div id="memList" class="rows"></div></div>
+    </div>
+    <div class="two-col">
+      <div class="card"><div class="card-h"><h2>Payment methods</h2><button class="btn" id="addPay">+ Add</button></div><div id="payList" class="rows"></div></div>
+      <div class="card"><div class="card-h"><h2>Currencies</h2><button class="btn" id="refreshRates">↻ Live rates</button></div><div id="curList" class="rows"></div><p class="muted small">Rates = how much main currency 1 unit buys. Live refresh uses open.er-api.com (optional integration); manual editing always works offline.</p></div>
+    </div>
+    <div class="card"><h2>Settings</h2>
+      <div class="form-grid">
+        <label>Main currency<select id="setMain"></select></label>
+        <label>Monthly budget<input id="setBudget" type="number" min="0" step="0.01"></label>
+        <label>Reminder window (days)<input id="setRemind" type="number" min="1" max="90" step="1"></label>
+        <label class="check"><input id="setMonthly" type="checkbox"> Show monthly-normalised prices in list</label>
+      </div>
+      <div class="row"><button class="btn primary" id="saveSettings">Save settings</button><button class="btn danger-ghost" id="resetDemo">Reset demo data</button><span id="setMsg" class="muted"></span></div>
+    </div>
+  </section>
+</main>
+
+<!-- SUB MODAL -->
+<div id="modal" class="modal hidden"><div class="sheet">
+  <div class="card-h"><h2 id="mTitle">New subscription</h2><button class="icon-btn" id="mClose">✕</button></div>
+  <form id="mForm" class="form-grid">
+    <input type="hidden" id="fId">
+    <label class="span2">Name<input id="fName" required maxlength="80" placeholder="e.g. StreamFlix"></label>
+    <label>Price<input id="fPrice" type="number" min="0" step="0.01" required></label>
+    <label>Currency<select id="fCurrency"></select></label>
+    <label>Billing every<input id="fFreq" type="number" min="1" max="366" value="1"></label>
+    <label>Cycle<select id="fCycle"><option value="1">Day(s)</option><option value="2">Week(s)</option><option value="3" selected>Month(s)</option><option value="4">Year(s)</option><option value="5">One-time</option></select></label>
+    <label>Next payment<input id="fNext" type="date" required></label>
+    <label>Start date<input id="fStart" type="date"></label>
+    <label>Category<select id="fCategory"></select></label>
+    <label>Paid by<select id="fMember"></select></label>
+    <label>Payment method<select id="fPay"></select></label>
+    <label>Icon emoji<input id="fEmoji" maxlength="4" value="🔁"></label>
+    <label>Colour<input id="fColor" type="color" value="#3e63dd"></label>
+    <label>URL<input id="fUrl" placeholder="https://…"></label>
+    <label class="check"><input id="fAuto" type="checkbox" checked> Auto-renews</label>
+    <label class="check"><input id="fInactive" type="checkbox"> Inactive (counts as savings)</label>
+    <label class="span2">Notes<textarea id="fNotes" rows="2" placeholder="Plan details, seats, cancellation notes…"></textarea></label>
+    <div class="row span2"><button class="btn primary" type="submit">Save</button><button class="btn danger hidden" type="button" id="mDelete">Delete</button><span class="muted" id="mMsg"></span></div>
+  </form>
+</div></div>
+
+<footer>Recurra 0.1.0 · GPL-3.0-only · Interaction patterns inspired by <a href="https://github.com/ellite/Wallos" target="_blank" rel="noreferrer">Wallos (GPL-3.0)</a> · reimplemented with original branding · data stays in your SQLite file</footer>
+<script src="/app.js" type="module"></script>
+</body>
+</html>
