@@ -256,3 +256,7 @@ collate-fieldstation-research/
 ## 📄 License
 
 This repository is licensed under the [GNU General Public License v3.0](recurra/LICENSE.md).
+
+---
+
+**Built by [Girish Lade](https://ladestack.in)** — Founder of [LadeStack](https://ladestack.in)
